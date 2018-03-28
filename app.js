@@ -18,7 +18,7 @@ var app = express();
 bitcoinapi.setWalletDetails(settings.wallet);
 if (settings.heavy != true) {
   bitcoinapi.setAccess('only', ['getinfo', 'getnetworkhashps', 'getmininginfo','getdifficulty', 'getconnectioncount',
-    'getblockcount', 'getblockhash', 'getblock', 'getrawtransaction', 'getpeerinfo', 'gettxoutsetinfo','listallunspent','sendrawtransaction']);
+    'getblockcount', 'getblockhash', 'getblock', 'getrawtransaction', 'getpeerinfo', 'gettxoutsetinfo','listallunspent','sendrawtransaction','getaddresstxs']);
 } else {
   // enable additional heavy api calls
   /*
@@ -56,7 +56,29 @@ app.use('/ext/getmoneysupply', function(req,res){
     res.send(' '+supply);
   });
 });
-
+app.use('/ext/getaddresstxs/:hash', function(req,res){
+  var hash = req.param('hash')
+  db.get_address(hash, function(address) {
+    if (address) {
+      var txs = [];
+      var hashes = address.txs.reverse();
+      var count = address.txs.length;
+      lib.syncLoop(count, function (loop) {
+        var i = loop.iteration();
+        db.get_tx(hashes[i].addresses, function(tx) {
+          if (tx) {
+            txs.push(tx);
+            loop.next();
+          } else {
+            loop.next();
+          }
+        });
+      }, function(){
+        res.send(txs)
+      });
+    }
+  });
+});
 app.use('/ext/getaddress/:hash', function(req,res){
   db.get_address(req.param('hash'), function(address){
     if (address) {
