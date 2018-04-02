@@ -62,7 +62,7 @@ app.use('/ext/getaddresstxs/:hash', function(req,res){
     if (address) {
       var txs = [];
       var hashes = address.txs.reverse();
-      var count = address.txs.length;
+      var count = address.txs.length>20?20:address.txs.length;
       lib.syncLoop(count, function (loop) {
         var i = loop.iteration();
         db.get_tx(hashes[i].addresses, function(tx) {
